@@ -1,129 +1,302 @@
 # AI Visual HTML Editor
 
-Une extension VSCode qui permet de modifier visuellement le HTML/CSS en utilisant l'IA directement depuis un aperçu en direct.
+A VSCode extension for visually editing HTML/CSS using AI from a live preview.
 
-## Fonctionnalités
+## Features
 
-- **Aperçu en direct** - Affiche votre fichier HTML dans un webview VSCode
-- **Sélecteur d'éléments** - Cliquez sur n'importe quel élément pour le sélectionner
-- **Highlight au survol** - Les éléments sont mis en évidence au survol de la souris
-- **Modification IA** - Décrivez les changements souhaités et l'IA génère le code CSS
-- **Undo/Redo** - Annulez les modifications facilement
+- **Live Preview** - Display your HTML file in a VSCode webview
+- **Element Picker** - Click on any element to select it
+- **Dual Highlight System** - Visual feedback with two overlays:
+  - **Blue (#007acc)**: Currently selected element (locked, moves only on click/scroll)
+  - **Green (#28a745)**: Hover preview for selection
+- **AI Modification** - Describe desired changes and AI generates appropriate CSS/HTML
+- **HTML Modification** - Add elements, modify content, set attributes
+- **Undo/Redo** - Easily revert changes with the Undo button in toolbar
 
 ## Installation
 
-1. Clonez le projet
-2. Installez les dépendances: `npm install`
-3. Compilez le projet: `npm run compile`
-4. Appuyez sur F5 pour lancer l'extension dans VSCode
+1. Clone the project
+2. Install dependencies: `npm install`
+3. Compile the project: `npm run compile`
+4. Press F5 to launch the extension in VSCode
 
-## Développement
+## Quick Start
 
-### Commandes disponibles
+### 1. Start Preview
 
-```bash
-npm run compile    # Compile le projet TypeScript
-npm run watch      # Compile en mode watch (auto-compilation)
-```
+1. Open an HTML file in VSCode
+2. Press `Ctrl+Alt+E` or run command "AI Visual Editor: Start Preview"
+3. The preview opens in a webview panel
 
-### Raccourcis clavier
+### 2. Select an Element
 
-| Commande | Raccourci |
-|----------|-----------|
-| Démarrer l'aperçu | `Ctrl+Alt+E` |
-| Activer le sélecteur | `Ctrl+Shift+P` |
-| Annuler la dernière modification | `Ctrl+Shift+Z` |
+1. In the preview, click the **"🎯 Pick"** button to activate the picker
+2. The cursor becomes a crosshair
+3. Hover over elements - they are highlighted in green
+4. Click on the desired element - it becomes selected (blue highlight)
 
-## Utilisation
+### 3. Modify with AI
 
-### 1. Démarrer l'aperçu
+1. A sidebar opens with element information
+2. Enter your instruction in the text field:
+   - Example: "center this element"
+   - Example: "add a margin of 20px"
+   - Example: "change color to blue"
+   - Example: "add a shadow"
+   - Example: "add an image logo"
+3. Click "Apply Changes" or press `Ctrl+Enter`
+4. AI generates the CSS/HTML modifications
+5. Click "Confirm" to apply or "Cancel" to revert
 
-1. Ouvrez un fichier HTML dans VSCode
-2. Appuyez sur `Ctrl+Alt+E` ou cliquez sur le bouton "AI Preview" dans la barre de status
-3. L'aperçu s'ouvre dans un onglet
+### 4. Undo a Change
 
-### 2. Sélectionner un élément
+- Press `Ctrl+Shift+Z` or click the "↶ Undo" button in the toolbar
 
-1. Dans l'aperçu, cliquez sur le bouton **"🎯 Pick"** pour activer le sélecteur
-2. Le curseur devient une croix
-3. Survolez les éléments - ils sont mis en évidence
-4. Cliquez sur l'élément souhaité
+## Keyboard Shortcuts
 
-### 3. Modifier avec l'IA
+| Command | Shortcut |
+|---------|----------|
+| Start Preview | `Ctrl+Alt+E` |
+| Toggle Picker | `Ctrl+Shift+P` |
+| Refresh Preview | `Ctrl+Alt+R` |
+| Undo Last Change | `Ctrl+Shift+Z` |
+| Apply Changes | `Ctrl+Enter` |
 
-1. Une sidebar s'ouvre avec les infos de l'élément
-2. Dans le champ de texte, décrivez le changement souhaité
-   - Exemple: "centrer cet élément"
-   - Exemple: "ajouter une marge de 20px"
-   - Exemple: "changer la couleur en bleu"
-3. Appuyez sur "Apply Changes" ou `Ctrl+Enter`
-4. L'IA génère les modifications CSS
-5. Cliquez sur "Confirm" pour appliquer ou "Cancel" pour annuler
+## Supported AI Providers
 
-### 4. Annuler une modification
+### Free Providers (Recommended)
 
-Appuyez sur `Ctrl+Shift+Z` ou exécutez la commande "AI Visual Editor: Undo Last Change"
+| Service | Type | Limit | Quality | UI/UX Oriented |
+|---------|------|-------|---------|----------------|
+| **Groq** | Cloud | 500 req/min | Excellent | Yes |
+| **Ollama** | Local | Unlimited | Good | - |
+| **LM Studio** | Local | Unlimited | Good | - |
+| **OpenAI Free** | Cloud | $5 credit/month | Excellent | Yes |
+| **Claude Free** | Cloud | 5 req/min | Excellent | Yes |
+
+### Paid Providers (Optional)
+
+| Service | Price | Quality |
+|---------|-------|---------|
+| OpenAI GPT-4 | $0.03/1K tokens | Excellent |
+| Claude 3 Opus | $0.015/1K tokens | Excellent |
+| Gemini Pro | $0.00125/1K tokens | Good |
+
+### Recommended: Groq
+
+- Free and generous (500 requests/minute)
+- Very fast response time (<500ms)
+- Supports Llama, Mixtral models
+- No credit card required
+
+### Alternative: Ollama (Local)
+
+- Completely free (no limits)
+- Local (no data sent externally)
+- Fully configurable
+
+## Configuration
+
+### Setting API Keys
+
+Run these commands from the Command Palette (`Ctrl+Shift+P`):
+
+- `AI Visual Editor: Set Groq API Key`
+- `AI Visual Editor: Set OpenAI API Key`
+- `AI Visual Editor: Set Anthropic API Key`
+- `AI Visual Editor: Configure Ollama`
+
+### VSCode Settings
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `aiVisualEditor.aiProvider` | AI provider (mock, groq, ollama, openai, anthropic) | mock |
+| `aiVisualEditor.groqModel` | Groq model (llama-3.1-70b-versatile, mixtral-8x7b-32768) | llama-3.1-70b-versatile |
+| `aiVisualEditor.ollamaModel` | Ollama model | llama3.2 |
+| `aiVisualEditor.ollamaUrl` | Ollama server URL | http://localhost:11434 |
+| `aiVisualEditor.previewPort` | Preview server port | 3000 |
+
+## AI Integration
+
+### How It Works
+
+1. User clicks an element in the preview
+2. Webview sends `element-clicked` message to extension
+3. Extension displays sidebar with element info
+4. User enters an instruction
+5. Instruction + element data is sent to AI
+6. AI returns CSS/HTML modifications
+7. Extension applies modifications via WorkspaceEdit API
+8. Preview is refreshed
+
+### Example Instructions
+
+| User Instruction | Generated CSS |
+|------------------|---------------|
+| "center this element" | display: flex; justify-content: center; align-items: center; |
+| "make it bigger" | width: 200px; height: 200px; |
+| "add margin" | margin: 20px; |
+| "change color to blue" | background-color: #007bff; |
+| "make it rounded" | border-radius: 8px; |
+| "add shadow" | box-shadow: 0 4px 6px rgba(0,0,0,0.1); |
+| "center text" | text-align: center; |
+| "hide it" | display: none; |
+
+### HTML Modification Types
+
+| Instruction | Change Type | Example |
+|-------------|-------------|---------|
+| "add amazon logo" | append | `<img src="...">` added at end |
+| "add at beginning" | prepend | `<img src="...">` added at start |
+| "replace content" | replace | Content replaced |
+| "add src=..." | setAttribute | Attribute added/modified |
 
 ## Architecture
 
 ```
 src/
 ├── extension/
-│   ├── main.ts                 # Point d'entrée de l'extension
+│   ├── main.ts                 # Extension entry point
 │   ├── commands/
-│   │   └── index.ts            # Enregistrement des commandes
+│   │   ├── index.ts           # Command registration
+│   │   └── configCommands.ts # API key configuration
 │   ├── webview/
-│   │   ├── webviewManager.ts   # Gestion du webview d'aperçu
-│   │   └── sidebarManager.ts  # Gestion de la sidebar de prompt
+│   │   ├── webviewManager.ts  # Preview webview management
+│   │   └── sidebarManager.ts  # Sidebar for prompts
 │   ├── ai/
-│   │   └── aiService.ts        # Service pour les appels IA
-│   └── editor/
-│       └── cssApplier.ts       # Application des modifications CSS
+│   │   └── aiService.ts       # AI service integration
+│   ├── editor/
+│   │   ├── cssApplier.ts      # CSS modification
+│   │   └── htmlApplier.ts     # HTML modification
+│   └── utils/
+│       └── config.ts          # Configuration service
 └── shared/
-    └── types.ts                # Types partagés
+    └── types.ts               # Shared types
 ```
 
-### Flux de données
+## Communication Flow
 
-1. L'utilisateur clique sur un élément dans l'aperçu
-2. Le webview envoie un message `element-clicked` à l'extension
-3. L'extension affiche la sidebar avec les infos de l'élément
-4. L'utilisateur saisit une instruction
-5. L'instruction + données de l'élément sont envoyées à l'IA
-6. L'IA retourne les modifications CSS
-7. L'extension applique les modifications via WorkspaceEdit API
-8. L'aperçu est rafraîchi
+```
+User Click
+    |
+    v
++---------------+
+| Webview       |
+| (Pick element)|
++-------+-------+
+        | element-clicked
+        v
++---------------+
+| Extension     |
+| (Handle click)|
++-------+-------+
+        | Show sidebar
+        v
++---------------+
+| Sidebar       |
+| (User enters  |
+|  instruction) |
++-------+-------+
+        | prompt-submitted
+        v
++---------------+
+| Extension     |
+| (Call AI)    |
++-------+-------+
+        | getSuggestion()
+        v
++---------------+
+| AI Provider   |
+| (Groq/Ollama/ |
+|  OpenAI/Claude)|
++-------+-------+
+        | JSON response
+        v
++---------------+
+| CSS/HTML Applier|
+| (Apply changes)|
++-------+-------+
+        | Refresh preview
+        v
++---------------+
+| Webview       |
+| (Show result) |
++---------------+
+```
 
-## Configuration
+## Dual Highlight System
 
-L'extension propose les options suivantes dans les paramètres VSCode:
+The system uses two overlay highlights with distinct roles:
 
-| Paramètre | Description | Défaut |
-|-----------|-------------|--------|
-| `aiVisualEditor.aiProvider` | Provider IA (openai, anthropic, mock) | mock |
-| `aiVisualEditor.openAIApiKey` | Clé API OpenAI | - |
-| `aiVisualEditor.previewPort` | Port du serveur d'aperçu | 3000 |
+| Highlight | Color | Role | Behavior |
+|-----------|-------|------|----------|
+| **Selected** | Blue (#007acc) | Currently modified element | Locked, moves only on click or scroll |
+| **Picker** | Green (#28a745) | Hover preview | Follows mouse, enables selection |
 
-## Mode Mock (défaut)
+### User Flow
 
-Par défaut, l'extension utilise un provider "mock" qui simule les réponses IA. Pour utiliser une vraie IA:
+1. User clicks "Select Element" in toolbar → picker (green) becomes active
+2. User hovers over an element → green highlight follows cursor
+3. User clicks an element → blue highlight moves to that element
+4. Sidebar opens for modification → picker stays active for new selection
 
-1. Configurez `aiVisualEditor.aiProvider` sur `openai`
-2. Entrez votre clé API dans `aiVisualEditor.openAIApiKey`
+## Toolbar
 
-## Dépannage
+The toolbar is fixed at the top of the preview with the following buttons:
 
-### L'aperçu ne s'affiche pas
-- Assurez-vous d'avoir un fichier HTML ouvert
-- Vérifiez la console de débogage (Help > Toggle Developer Tools)
+| Button | Function |
+|--------|----------|
+| 🎯 Pick / ✕ Stop | Toggle element selection mode |
+| 🔄 Refresh | Reload the preview |
+| ↶ Undo | Undo last change |
 
-### Le sélecteur ne fonctionne pas
-- Cliquez sur le bouton "🎯 Pick" pour activer le sélecteur
-- Le bouton doit afficher "✕ Stop" et le curseur doit être une croix
+## Troubleshooting
 
-### Les modifications ne sont pas appliquées
-- Vérifiez que le fichier CSS est accessible en écriture
-- Essayez d'annuler et de réappliquer la modification
+### Preview doesn't display
+- Make sure you have an HTML file open
+- Check the debug console (Help > Toggle Developer Tools)
+
+### Picker doesn't work
+- Click the "🎯 Pick" button to activate the picker
+- Button should show "✕ Stop" and cursor should be a crosshair
+
+### Modifications not applied
+- Check that the CSS file is writable
+- Try undoing and reapplying the modification
+- Use elements with unique IDs for better targeting
+
+### Selector issues
+- Use elements with unique `id` attributes for precise targeting
+- Clear instructions: "change text to [exact text]" instead of "change text"
+- Check debug logs for AI responses
+
+## Known Limitations
+
+### Selector Issues
+- Selectors with pseudo-classes (:nth-child, :first-child, etc.) may not work
+- Very long selectors with deep DOM paths may fail
+- Solution: Use elements with unique IDs
+
+### AI Response Truncation
+- AI may truncate replacement text
+- Solution: Use shorter instructions or increase max_tokens
+
+## Development
+
+### Commands
+
+```bash
+npm run compile    # Compile TypeScript project
+npm run watch      # Compile in watch mode (auto-compilation)
+```
+
+### Files
+
+- [AI Integration Documentation](docs/AI_INTEGRATION.md)
+- [API Key Configuration](docs/API_KEY_CONFIG.md)
+- [Dual Highlight System](docs/dual-highlight-system.md)
+- [HTML Modification System](docs/html-modification-system.md)
+- [Toolbar Guide](docs/TOOLBAR_GUIDE.md)
 
 ## License
 
