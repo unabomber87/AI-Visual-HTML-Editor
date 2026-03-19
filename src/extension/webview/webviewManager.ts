@@ -392,6 +392,16 @@ export class WebviewManager {
             }
         });
         
+        // Mouse leave - hide picker overlay (green) but keep selected overlay (blue)
+        document.addEventListener('mouseleave', function(e) {
+            if (!isPickerEnabled) return;
+            // Hide picker (green) but keep selected (blue) visible
+            if (pickerOverlay) {
+                pickerOverlay.style.display = 'none';
+            }
+            pickerElement = null;
+        });
+        
         // Click - select element (moves blue overlay, keeps green active)
         document.addEventListener('click', function(e) {
             if (!isPickerEnabled) return;
