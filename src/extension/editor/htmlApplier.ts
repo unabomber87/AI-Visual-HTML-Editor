@@ -119,6 +119,31 @@ export class HTMLApplier {
     }
 
     /**
+     * Extract full selector info (ID and classes) for precise matching
+     */
+    private extractSelectorInfo(selector: string): { id: string | null; classes: string[]; tagName: string | null } {
+        // Get the last part of the selector (after > or space)
+        const lastPart = selector.split(/[>\s]/).pop()?.trim() || selector;
+        
+        // Clean pseudo-classes
+        const cleanPart = lastPart.replace(/::?[a-zA-Z-]+\([^)]*\)/g, '').replace(/:[a-zA-Z-]+/g, '');
+        
+        // Extract tag name
+        const tagMatch = cleanPart.match(/^([a-zA-Z][a-zA-Z0-9]*)/);
+        const tagName = tagMatch ? tagMatch[1].toLowerCase() : null;
+        
+        // Extract ID
+        const idMatch = cleanPart.match(/#([a-zA-Z][a-zA-Z0-9_-]*)/);
+        const id = idMatch ? idMatch[1] : null;
+        
+        // Extract classes
+        const classMatches = cleanPart.match(/\.([a-zA-Z][a-zA-Z0-9_-]*)/g);
+        const classes = classMatches ? classMatches.map(c => c.replace('.', '')) : [];
+        
+        return { id, classes, tagName };
+    }
+
+    /**
      * Find matching closing tag position by counting nested tags
      */
     private findClosingTagPosition(htmlContent: string, openTagStart: number, tagName: string): number {
@@ -161,16 +186,23 @@ export class HTMLApplier {
     }
 
     /**
-     * Replace inner HTML of an element
+     * Replace inner HTML of an element - now uses ID/classes for precise matching
      */
     private replaceInnerHTML(htmlContent: string, selector: string, newContent: string): string {
-        const tagName = this.extractTagName(selector, htmlContent);
-        if (!tagName) return htmlContent;
+        const { id, classes, tagName } = this.extractSelectorInfo(selector);
+        
+        if (!tagName) {
+            console.error('[HTMLApplier] Could not extract tag name from selector:', selector);
+            return htmlContent;
+        }
 
-        // Find all opening tags matching the selector
-        const regex = new RegExp(`<${tagName}[^>]*>`, 'gi');
+        // Build a regex that matches the element with its ID and classes
+        // Priority: ID > classes > tag
+        const escapedTagName = this.escapeRegex(tagName);
+        
+        // Find all potential matches
+        const regex = new RegExp(`<${escapedTagName}[^>]*>`, 'gi');
         let match;
-        let lastValidMatch: { start: number; end: number } | null = null;
 
         while ((match = regex.exec(htmlContent)) !== null) {
             const openTagStart = match.index;
@@ -178,23 +210,53 @@ export class HTMLApplier {
             
             if (openTagEnd === -1) continue;
 
-            // Find the matching closing tag
-            const closeTagPos = this.findClosingTagPosition(htmlContent, openTagStart, tagName);
+            const openTag = htmlContent.substring(openTagStart, openTagEnd + 1);
             
-            if (closeTagPos !== -1) {
-                // Found a complete tag pair
-                const oldContent = htmlContent.substring(openTagEnd + 1, closeTagPos);
+            // Check if this element matches our selector criteria
+            if (this.doesElementMatch(openTag, id, classes, tagName)) {
+                // Find the matching closing tag
+                const closeTagPos = this.findClosingTagPosition(htmlContent, openTagStart, tagName);
                 
-                // Replace this element's content
-                return (
-                    htmlContent.substring(0, openTagEnd + 1) +
-                    newContent +
-                    htmlContent.substring(closeTagPos)
-                );
+                if (closeTagPos !== -1) {
+                    // Found the correct element - replace its content
+                    return (
+                        htmlContent.substring(0, openTagEnd + 1) +
+                        newContent +
+                        htmlContent.substring(closeTagPos)
+                    );
+                }
             }
         }
 
+        console.error('[HTMLApplier] Could not find element matching selector:', selector);
         return htmlContent;
+    }
+
+    /**
+     * Check if an opening tag matches the selector criteria
+     */
+    private doesElementMatch(openTag: string, targetId: string | null, targetClasses: string[], targetTag: string): boolean {
+        const lowerOpenTag = openTag.toLowerCase();
+        
+        // Check ID if specified in selector
+        if (targetId) {
+            const idRegex = new RegExp(`\\sid=["']${this.escapeRegex(targetId)}["']`, 'i');
+            if (!idRegex.test(openTag)) {
+                return false; // ID required but not found
+            }
+        }
+        
+        // Check classes if specified in selector
+        if (targetClasses.length > 0) {
+            for (const className of targetClasses) {
+                const classRegex = new RegExp(`\\b${this.escapeRegex(className)}\\b`, 'i');
+                if (!classRegex.test(openTag)) {
+                    return false; // Class required but not found
+                }
+            }
+        }
+        
+        return true;
     }
 
     /**
