@@ -198,23 +198,47 @@ export function registerConfigCommands(
         vscode.commands.registerCommand(
             'aiVisualEditor.showConfig',
             async () => {
-                const provider = configService.getProvider();
-                const groqKey = await configService.getApiKey('groq');
-                const openaiKey = await configService.getApiKey('openai');
-                const anthropicKey = await configService.getApiKey('anthropic');
-                const ollamaUrl = configService.getOllamaUrl();
+                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+                if (!workspaceFolder) {
+                    vscode.window.showErrorMessage('No workspace folder open');
+                    return;
+                }
+
+                const configPath = vscode.Uri.joinPath(workspaceFolder.uri, 'ai-config.json');
                 
-                const groqConfigured = groqKey ? 'Configured' : 'Not set';
-                const openaiConfigured = openaiKey ? 'Configured' : 'Not set';
-                const anthropicConfigured = anthropicKey ? 'Configured' : 'Not set';
+                try {
+                    // Try to read existing config
+                    await vscode.workspace.fs.readFile(configPath);
+                } catch {
+                    // Create default config if doesn't exist
+                    const defaultConfig = {
+                        aiProvider: configService.getProvider(),
+                        groq: {
+                            model: configService.getGroqModel(),
+                            apiKey: "(stored in VSCode secrets)"
+                        },
+                        openai: {
+                            apiKey: "(stored in VSCode secrets)"
+                        },
+                        anthropic: {
+                            apiKey: "(stored in VSCode secrets)"
+                        },
+                        ollama: {
+                            url: configService.getOllamaUrl(),
+                            model: configService.getOllamaModel()
+                        },
+                        previewPort: configService.getPreviewPort()
+                    };
+                    
+                    await vscode.workspace.fs.writeFile(
+                        configPath,
+                        Buffer.from(JSON.stringify(defaultConfig, null, 2))
+                    );
+                }
 
-                const message = `Current Provider: ${provider}\n` +
-                    `Groq: ${groqConfigured}\n` +
-                    `OpenAI: ${openaiConfigured}\n` +
-                    `Anthropic: ${anthropicConfigured}\n` +
-                    `Ollama URL: ${ollamaUrl}`;
-
-                vscode.window.showInformationMessage(message);
+                // Open the config file
+                const doc = await vscode.workspace.openTextDocument(configPath);
+                await vscode.window.showTextDocument(doc);
             }
         )
     );
