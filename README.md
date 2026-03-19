@@ -64,36 +64,33 @@ A VSCode extension for visually editing HTML/CSS using AI from a live preview.
 
 ## Supported AI Providers
 
-### Free Providers (Recommended)
+### Groq (Primary - Tested)
 
-| Service | Type | Limit | Quality | UI/UX Oriented |
-|---------|------|-------|---------|----------------|
-| **Groq** | Cloud | 500 req/min | Excellent | Yes |
-| **Ollama** | Local | Unlimited | Good | - |
-| **LM Studio** | Local | Unlimited | Good | - |
-| **OpenAI Free** | Cloud | $5 credit/month | Excellent | Yes |
-| **Claude Free** | Cloud | 5 req/min | Excellent | Yes |
-
-### Paid Providers (Optional)
-
-| Service | Price | Quality |
-|---------|-------|---------|
-| OpenAI GPT-4 | $0.03/1K tokens | Excellent |
-| Claude 3 Opus | $0.015/1K tokens | Excellent |
-| Gemini Pro | $0.00125/1K tokens | Good |
-
-### Recommended: Groq
+**Currently the only tested and working provider.**
 
 - Free and generous (500 requests/minute)
 - Very fast response time (<500ms)
 - Supports Llama, Mixtral models
 - No credit card required
 
-### Alternative: Ollama (Local)
+**Configuration:**
+```json
+{
+  "provider": "groq",
+  "model": "llama-3.1-70b-versatile",
+  "apiKey": "YOUR_GROQ_API_KEY"
+}
+```
 
-- Completely free (no limits)
-- Local (no data sent externally)
-- Fully configurable
+### Other Providers (Not Yet Tested)
+
+| Service | Type | Status |
+|---------|------|--------|
+| OpenAI | Cloud | Not tested yet |
+| Anthropic (Claude) | Cloud | Not tested yet |
+| Ollama | Local | Not tested yet |
+
+> **Note:** The extension supports multiple AI providers, but only Groq has been tested and confirmed working. Other providers (OpenAI, Anthropic, Ollama) are implemented but not yet tested. Feel free to contribute by testing and reporting issues!
 
 ## Configuration
 
