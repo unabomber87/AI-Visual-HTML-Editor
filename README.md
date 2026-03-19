@@ -1,4 +1,4 @@
-<img src="icone.png" width="128" align="left" />
+<img src="icone.png" width="64" align="left" />
 
 # AI Visual HTML Editor
 
