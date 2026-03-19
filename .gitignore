@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+
+# VSCode test
+.vscode-test/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# TypeScript cache
+*.tsbuildinfo

@@ -1,0 +1,175 @@
+{
+  "name": "ai-visual-html-editor",
+  "displayName": "AI Visual HTML Editor",
+  "description": "Visual HTML/CSS editor with AI assistance for VSCode",
+  "version": "0.1.0",
+  "publisher": "ai-visual-editor",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension/main.js",
+  "activationEvents": [
+    "onLanguage:html",
+    "onCommand:aiVisualEditor.startPreview"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiVisualEditor.startPreview",
+        "title": "AI Visual Editor: Start Preview",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.stopPreview",
+        "title": "AI Visual Editor: Stop Preview",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.togglePicker",
+        "title": "AI Visual Editor: Toggle Element Picker",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.refreshPreview",
+        "title": "AI Visual Editor: Refresh Preview",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.undo",
+        "title": "AI Visual Editor: Undo Last Change",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.setGroqApiKey",
+        "title": "AI Visual Editor: Set Groq API Key",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.setOpenAiApiKey",
+        "title": "AI Visual Editor: Set OpenAI API Key",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.setAnthropicApiKey",
+        "title": "AI Visual Editor: Set Anthropic API Key",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.setOllamaUrl",
+        "title": "AI Visual Editor: Configure Ollama",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.showConfig",
+        "title": "AI Visual Editor: Show Configuration",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.resetConfig",
+        "title": "AI Visual Editor: Reset Configuration",
+        "category": "AI Visual Editor"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "aiVisualEditor.togglePicker",
+          "when": "view == aiVisualEditor",
+          "icon": "$(target)"
+        },
+        {
+          "command": "aiVisualEditor.refreshPreview",
+          "when": "view == aiVisualEditor",
+          "icon": "$(refresh)"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "aiVisualEditor.setGroqApiKey",
+          "when": "true"
+        },
+        {
+          "command": "aiVisualEditor.setOpenAiApiKey",
+          "when": "true"
+        },
+        {
+          "command": "aiVisualEditor.setAnthropicApiKey",
+          "when": "true"
+        },
+        {
+          "command": "aiVisualEditor.setOllamaUrl",
+          "when": "true"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "aiVisualEditor.startPreview",
+        "key": "ctrl+alt+e",
+        "mac": "cmd+alt+e"
+      },
+      {
+        "command": "aiVisualEditor.togglePicker",
+        "key": "ctrl+shift+p",
+        "mac": "cmd+shift+p"
+      },
+      {
+        "command": "aiVisualEditor.refreshPreview",
+        "key": "ctrl+alt+r",
+        "mac": "cmd+alt+r"
+      },
+      {
+        "command": "aiVisualEditor.undo",
+        "key": "ctrl+shift+z",
+        "mac": "cmd+shift+z"
+      }
+    ],
+    "configuration": {
+      "title": "AI Visual HTML Editor",
+      "properties": {
+        "aiVisualEditor.aiProvider": {
+          "type": "string",
+          "enum": ["mock", "groq", "ollama", "openai", "anthropic"],
+          "default": "mock",
+          "description": "AI provider to use for generating changes"
+        },
+        "aiVisualEditor.groqModel": {
+          "type": "string",
+          "default": "llama-3.3-70b-versatile",
+          "description": "Groq model to use (llama-3.3-70b-versatile, mixtral-8x7b-32768, etc.)"
+        },
+        "aiVisualEditor.ollamaModel": {
+          "type": "string",
+          "default": "llama3.2",
+          "description": "Ollama model to use"
+        },
+        "aiVisualEditor.ollamaUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama server URL"
+        },
+        "aiVisualEditor.previewPort": {
+          "type": "number",
+          "default": 3000,
+          "description": "Port for local preview server"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.75.0",
+    "@vscode/test-electron": "^2.3.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {}
+}
