@@ -98,11 +98,15 @@ export class WebviewManager {
     private getInspectorScript(): string {
         return `
 (function() {
-    // State
+    // State - Dual Highlight System
     var isPickerEnabled = false;
     var highlightedElement = null;
-    var highlightOverlay = null;
-    var selectedElementInfo = null; // Store the selected element info
+    var pickerElement = null; // Element under cursor (for picker overlay)
+    var selectedElement = null; // Currently selected element
+    
+    // Two overlays: Picker (green) and Selected (blue)
+    var pickerOverlay = null;    // Green - hover preview
+    var selectedOverlay = null;  // Blue - locked to selected element
 
     // Get VSCode API
     var vscode = window.acquireVsCodeApi ? window.acquireVsCodeApi() : null;
@@ -247,15 +251,21 @@ export class WebviewManager {
         return elementData;
     }
 
-    // Create highlight overlay and toolbar
+    // Create dual highlight overlays and toolbar
     function createUI() {
-        if (highlightOverlay) return;
+        if (pickerOverlay) return;
         
-        // Create highlight overlay
-        highlightOverlay = document.createElement('div');
-        highlightOverlay.id = 'ai-highlight-overlay';
-        highlightOverlay.style.cssText = 'position: fixed; border: 2px solid #007acc; background-color: rgba(0, 122, 204, 0.1); pointer-events: none; z-index: 99999; display: none;';
-        document.body.appendChild(highlightOverlay);
+        // Create PICKER overlay (green) - for hover preview
+        pickerOverlay = document.createElement('div');
+        pickerOverlay.id = 'ai-picker-overlay';
+        pickerOverlay.style.cssText = 'position: fixed; border: 2px solid #28a745; background-color: rgba(40, 167, 69, 0.1); pointer-events: none; z-index: 99998; display: none;';
+        document.body.appendChild(pickerOverlay);
+        
+        // Create SELECTED overlay (blue) - for selected element
+        selectedOverlay = document.createElement('div');
+        selectedOverlay.id = 'ai-selected-overlay';
+        selectedOverlay.style.cssText = 'position: fixed; border: 2px solid #007acc; background-color: rgba(0, 122, 204, 0.2); pointer-events: none; z-index: 99999; display: none;';
+        document.body.appendChild(selectedOverlay);
         
         // Create toolbar at the TOP of the page
         var toolbar = document.createElement('div');
@@ -325,61 +335,64 @@ export class WebviewManager {
         document.body.style.paddingTop = '60px';
     }
 
-    // Clear highlight
+    // Clear all highlights
     function clearHighlight() {
-        if (highlightOverlay) {
-            highlightOverlay.style.display = 'none';
-            delete highlightOverlay.dataset.active;
+        // Clear picker overlay (green)
+        if (pickerOverlay) {
+            pickerOverlay.style.display = 'none';
+        }
+        pickerElement = null;
+        
+        // Clear selected overlay (blue)
+        if (selectedOverlay) {
+            selectedOverlay.style.display = 'none';
         }
         highlightedElement = null;
-        selectedElementInfo = null;
+        selectedElement = null;
     }
 
-    // Highlight element (for hover preview)
-    function highlightElement(target) {
-        if (!isPickerEnabled || !highlightOverlay) return;
+    // Update picker overlay (green) - follows cursor on hover
+    function updatePickerOverlay(target) {
+        if (!isPickerEnabled || !pickerOverlay) return;
         
-        // Only update during hover if no element is selected yet
-        if (!selectedElementInfo) {
-            var rect = target.getBoundingClientRect();
-            highlightOverlay.style.top = rect.top + 'px';
-            highlightOverlay.style.left = rect.left + 'px';
-            highlightOverlay.style.width = rect.width + 'px';
-            highlightOverlay.style.height = rect.height + 'px';
-            highlightOverlay.style.display = 'block';
-        }
+        pickerElement = target;
+        var rect = target.getBoundingClientRect();
+        pickerOverlay.style.top = rect.top + 'px';
+        pickerOverlay.style.left = rect.left + 'px';
+        pickerOverlay.style.width = rect.width + 'px';
+        pickerOverlay.style.height = rect.height + 'px';
+        pickerOverlay.style.display = 'block';
     }
 
-    // Lock highlight to selected element (called on click)
-    function lockHighlightToElement(target) {
-        if (!highlightOverlay) return;
+    // Lock selected overlay (blue) to clicked element
+    function updateSelectedOverlay(target) {
+        if (!selectedOverlay) return;
         
+        selectedElement = target;
         highlightedElement = target;
-        selectedElementInfo = target;
-        highlightOverlay.dataset.active = 'true';
         
         var rect = target.getBoundingClientRect();
-        highlightOverlay.style.top = rect.top + 'px';
-        highlightOverlay.style.left = rect.left + 'px';
-        highlightOverlay.style.width = rect.width + 'px';
-        highlightOverlay.style.height = rect.height + 'px';
-        highlightOverlay.style.display = 'block';
+        selectedOverlay.style.top = rect.top + 'px';
+        selectedOverlay.style.left = rect.left + 'px';
+        selectedOverlay.style.width = rect.width + 'px';
+        selectedOverlay.style.height = rect.height + 'px';
+        selectedOverlay.style.display = 'block';
     }
 
     // Initialize when DOM is ready
     function init() {
         createUI();
         
-        // Mouse move - highlight element
+        // Mouse move - update picker overlay (green) on hover
         document.addEventListener('mousemove', function(e) {
             if (!isPickerEnabled) return;
             var target = e.target;
             if (target && target !== document.body && target !== document.documentElement) {
-                highlightElement(target);
+                updatePickerOverlay(target);
             }
         });
         
-        // Click - select element
+        // Click - select element (moves blue overlay, keeps green active)
         document.addEventListener('click', function(e) {
             if (!isPickerEnabled) return;
             
@@ -391,8 +404,9 @@ export class WebviewManager {
                 // Extract complete element data with unique selector
                 var elementData = extractElementData(target);
                 
-                // Lock the highlight to the clicked element
-                lockHighlightToElement(target);
+                // Move blue overlay to clicked element
+                // Green overlay stays active for new selection
+                updateSelectedOverlay(target);
                 
                 // Log the unique selector for debugging
                 console.log('=== AI Visual Editor ===');
@@ -409,14 +423,24 @@ export class WebviewManager {
             }
         });
         
-        // Update highlight position on scroll
+        // Update both overlays on scroll
         document.addEventListener('scroll', function() {
-            if (selectedElementInfo && highlightOverlay && highlightOverlay.dataset.active) {
-                var rect = selectedElementInfo.getBoundingClientRect();
-                highlightOverlay.style.top = rect.top + 'px';
-                highlightOverlay.style.left = rect.left + 'px';
-                highlightOverlay.style.width = rect.width + 'px';
-                highlightOverlay.style.height = rect.height + 'px';
+            // Update picker (green) if hovering
+            if (pickerElement && pickerOverlay) {
+                var pickerRect = pickerElement.getBoundingClientRect();
+                pickerOverlay.style.top = pickerRect.top + 'px';
+                pickerOverlay.style.left = pickerRect.left + 'px';
+                pickerOverlay.style.width = pickerRect.width + 'px';
+                pickerOverlay.style.height = pickerRect.height + 'px';
+            }
+            
+            // Update selected (blue) if element is selected
+            if (selectedElement && selectedOverlay) {
+                var selectedRect = selectedElement.getBoundingClientRect();
+                selectedOverlay.style.top = selectedRect.top + 'px';
+                selectedOverlay.style.left = selectedRect.left + 'px';
+                selectedOverlay.style.width = selectedRect.width + 'px';
+                selectedOverlay.style.height = selectedRect.height + 'px';
             }
         }, true);
         
