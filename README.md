@@ -297,4 +297,4 @@ npm run watch      # Compile in watch mode (auto-compilation)
 
 ## License
 
-MIT
+Apache License 2.0
