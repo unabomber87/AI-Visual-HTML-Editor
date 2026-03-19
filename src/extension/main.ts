@@ -3,16 +3,19 @@ import * as vscode from 'vscode';
 import { WebviewManager } from './webview/webviewManager';
 import { SidebarManager } from './webview/sidebarManager';
 import { AIService } from './ai/aiService';
+import { AILogger } from './ai/aiLogger';
 import { CSSApplier } from './editor/cssApplier';
 import { HTMLApplier } from './editor/htmlApplier';
 import { registerCommands } from './commands';
 import { registerConfigCommands } from './commands/configCommands';
+import { registerLoggingCommands, setLogger } from './commands/loggingCommands';
 import { ConfigService } from './utils/config';
 
 // Global state
 let webviewManager: WebviewManager | undefined;
 let sidebarManager: SidebarManager | undefined;
 let aiService: AIService | undefined;
+let aiLogger: AILogger | undefined;
 let cssApplier: CSSApplier | undefined;
 let htmlApplier: HTMLApplier | undefined;
 let configService: ConfigService | undefined;
@@ -31,7 +34,30 @@ export function activate(context: vscode.ExtensionContext): void {
         
         // Initialize services
         const provider = configService.getProvider();
-        aiService = new AIService(configService);
+        
+        // Initialize AI Logger - use the first workspace folder if available
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        const workspacePath = workspaceFolders && workspaceFolders.length > 0 
+            ? workspaceFolders[0].uri.fsPath 
+            : context.extensionUri.fsPath;
+        
+        aiLogger = new AILogger(workspacePath);
+        
+        // Check if logging is enabled in config
+        const loggingConfig = vscode.workspace.getConfiguration('aiVisualEditor');
+        const loggingEnabled = loggingConfig.get<boolean>('aiLogging.enabled', false);
+        aiLogger.setEnabled(loggingEnabled);
+        
+        const logFormat = loggingConfig.get<'json' | 'readable'>('aiLogging.format', 'json');
+        aiLogger.setFormat(logFormat);
+        
+        const includeFullPrompt = loggingConfig.get<boolean>('aiLogging.includeFullPrompt', true);
+        aiLogger.setIncludeFullPrompt(includeFullPrompt);
+        
+        // Initialize logger (sync - directory creation may be async but we handle errors internally)
+        aiLogger.initialize().catch(err => console.error('[AILogger] Init error:', err));
+        
+        aiService = new AIService(configService, aiLogger);
         cssApplier = new CSSApplier();
         htmlApplier = new HTMLApplier();
         webviewManager = new WebviewManager(context);
@@ -42,6 +68,10 @@ export function activate(context: vscode.ExtensionContext): void {
         
         // Register configuration commands
         registerConfigCommands(context, configService);
+        
+        // Register logging commands and pass logger reference
+        setLogger(aiLogger!);
+        context.subscriptions.push(...registerLoggingCommands(context));
 
         // Create status bar item
         statusBarItem = vscode.window.createStatusBarItem(

@@ -9,6 +9,8 @@ out/
 
 # Logs
 *.log
+ai-logs/
+ai-config.json
 
 # OS files
 .DS_Store

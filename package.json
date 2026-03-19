@@ -71,6 +71,31 @@
         "command": "aiVisualEditor.resetConfig",
         "title": "AI Visual Editor: Reset Configuration",
         "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.enableAiLogging",
+        "title": "AI Visual Editor: Enable AI Logging",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.disableAiLogging",
+        "title": "AI Visual Editor: Disable AI Logging",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.toggleAiLogging",
+        "title": "AI Visual Editor: Toggle AI Logging",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.openLogsFolder",
+        "title": "AI Visual Editor: Open Logs Folder",
+        "category": "AI Visual Editor"
+      },
+      {
+        "command": "aiVisualEditor.viewTodayLogs",
+        "title": "AI Visual Editor: View Today's Logs",
+        "category": "AI Visual Editor"
       }
     ],
     "menus": {
@@ -155,6 +180,22 @@
           "type": "number",
           "default": 3000,
           "description": "Port for local preview server"
+        },
+        "aiVisualEditor.aiLogging.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable AI logging to record queries and responses"
+        },
+        "aiVisualEditor.aiLogging.format": {
+          "type": "string",
+          "enum": ["json", "readable"],
+          "default": "json",
+          "description": "Format for AI logs (json or readable)"
+        },
+        "aiVisualEditor.aiLogging.includeFullPrompt": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include full prompt in AI logs"
         }
       }
     }

@@ -11,6 +11,24 @@ export interface ElementData {
     cssSelector: string;
     attributes: Record<string, string>;
     styles: Record<string, string>;
+    // Optional context fields for AI
+    parentStyles?: Record<string, string>;
+    dimensions?: {
+        width: string;
+        height: string;
+        position: string;
+        top?: string;
+        right?: string;
+        bottom?: string;
+        left?: string;
+    };
+    viewport?: {
+        width: number;
+        height: number;
+        isMobile: boolean;
+    };
+    inlineStyles?: string;
+    siblingCount?: number;
     filePath?: string;
     lineNumber?: number;
 }
@@ -84,4 +102,44 @@ export interface UndoEntry {
     oldContent: string;
     newContent: string;
     timestamp: number;
+}
+
+// AI Logger types
+export interface AILogQuery {
+    id: string;
+    timestamp: string;
+    provider: AIProvider;
+    instruction: string;
+    elementContext: {
+        tagName: string;
+        id: string;
+        classList: string[];
+        cssSelector: string;
+        filePath?: string;
+    };
+    fullPrompt?: string;
+}
+
+export interface AILogAnswer {
+    id: string;
+    timestamp: string;
+    success: boolean;
+    response?: {
+        selector: string;
+        changes: {
+            css: string;
+            html: string;
+        };
+    };
+    error?: {
+        type: string;
+        message: string;
+        retryable: boolean;
+    };
+    duration: number;
+}
+
+export interface AILogEntry {
+    query: AILogQuery;
+    answer: AILogAnswer;
 }

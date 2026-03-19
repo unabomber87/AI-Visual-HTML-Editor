@@ -198,47 +198,8 @@ export function registerConfigCommands(
         vscode.commands.registerCommand(
             'aiVisualEditor.showConfig',
             async () => {
-                const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-                if (!workspaceFolder) {
-                    vscode.window.showErrorMessage('No workspace folder open');
-                    return;
-                }
-
-                const configPath = vscode.Uri.joinPath(workspaceFolder.uri, 'ai-config.json');
-                
-                try {
-                    // Try to read existing config
-                    await vscode.workspace.fs.readFile(configPath);
-                } catch {
-                    // Create default config if doesn't exist
-                    const defaultConfig = {
-                        aiProvider: configService.getProvider(),
-                        groq: {
-                            model: configService.getGroqModel(),
-                            apiKey: "(stored in VSCode secrets)"
-                        },
-                        openai: {
-                            apiKey: "(stored in VSCode secrets)"
-                        },
-                        anthropic: {
-                            apiKey: "(stored in VSCode secrets)"
-                        },
-                        ollama: {
-                            url: configService.getOllamaUrl(),
-                            model: configService.getOllamaModel()
-                        },
-                        previewPort: configService.getPreviewPort()
-                    };
-                    
-                    await vscode.workspace.fs.writeFile(
-                        configPath,
-                        Buffer.from(JSON.stringify(defaultConfig, null, 2))
-                    );
-                }
-
-                // Open the config file
-                const doc = await vscode.workspace.openTextDocument(configPath);
-                await vscode.window.showTextDocument(doc);
+                // Open VSCode settings directly to AI Visual Editor configuration
+                await vscode.commands.executeCommand('workbench.action.openSettings', 'aiVisualEditor');
             }
         )
     );
