@@ -1,5 +1,7 @@
 # AI Visual HTML Editor
 
+![Icon](icone.png)
+
 A VSCode extension for visually editing HTML/CSS using AI from a live preview.
 
 ![AI Visual HTML Editor Preview](preview.png)
