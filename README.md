@@ -2,6 +2,8 @@
 
 A VSCode extension for visually editing HTML/CSS using AI from a live preview.
 
+![AI Visual HTML Editor Preview](preview.png)
+
 ## Features
 
 - **Live Preview** - Display your HTML file in a VSCode webview
