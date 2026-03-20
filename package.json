@@ -217,9 +217,6 @@
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui"
   },
-  "dependencies": {
-    "vscode": "^1.75.0"
-  },
   "devDependencies": {
     "@types/node": "^18.19.130",
     "@types/vscode": "^1.75.0",
