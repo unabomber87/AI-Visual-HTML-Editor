@@ -20,11 +20,13 @@
     "declarationMap": true
   },
   "include": [
-    "src/**/*"
+    "src/extension/**/*",
+    "src/shared/**/*"
   ],
   "exclude": [
     "node_modules",
     "out",
-    ".vscode-test"
+    ".vscode-test",
+    "src/test"
   ]
 }
