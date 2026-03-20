@@ -156,7 +156,13 @@
       "properties": {
         "aiVisualEditor.aiProvider": {
           "type": "string",
-          "enum": ["mock", "groq", "ollama", "openai", "anthropic"],
+          "enum": [
+            "mock",
+            "groq",
+            "ollama",
+            "openai",
+            "anthropic"
+          ],
           "default": "mock",
           "description": "AI provider to use for generating changes"
         },
@@ -187,7 +193,10 @@
         },
         "aiVisualEditor.aiLogging.format": {
           "type": "string",
-          "enum": ["json", "readable"],
+          "enum": [
+            "json",
+            "readable"
+          ],
           "default": "json",
           "description": "Format for AI logs (json or readable)"
         },
@@ -203,13 +212,17 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "node ./out/test/runTest.js"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.75.0",
+    "@vitest/coverage-v8": "^2.1.9",
     "@vscode/test-electron": "^2.3.0",
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {}
+    "typescript": "^5.0.0",
+    "vitest": "^2.1.9"
+  }
 }

@@ -17,3 +17,9 @@ ai-config.json
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Package lock
+package-lock.json
+
+# Coverage reports
+coverage/

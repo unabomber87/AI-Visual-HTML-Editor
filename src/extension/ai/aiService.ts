@@ -1,15 +1,17 @@
 // AI Service - Handles AI integration
-import * as vscode from 'vscode';
-import { ElementData, AIResponse, AIProvider } from '../../shared/types';
+import { ElementData, AIResponse } from '../../shared/types';
 import { ConfigService } from '../utils/config';
 import { AILogger } from './aiLogger';
+import { AIProviders } from './aiProviders';
 
 export class AIService {
     private configService: ConfigService;
+    private providers: AIProviders;
     private logger: AILogger | null = null;
 
     constructor(configService: ConfigService, logger?: AILogger) {
         this.configService = configService;
+        this.providers = new AIProviders(configService);
         this.logger = logger || null;
     }
 
@@ -21,7 +23,6 @@ export class AIService {
         const provider = this.configService.getProvider();
         const prompt = this.buildPrompt(elementData, instruction);
         
-        // Log the query
         const queryId = await this.logger?.logQuery({
             provider,
             instruction,
@@ -38,32 +39,12 @@ export class AIService {
         try {
             let response: AIResponse | { type: 'error'; message: string; retryable: boolean };
             
-            switch (provider) {
-                case 'mock':
-                    response = this.getMockResponse(elementData, instruction);
-                    break;
-                    
-                case 'groq':
-                    response = await this.callGroq(prompt);
-                    break;
-                    
-                case 'openai':
-                    response = await this.callOpenAI(prompt);
-                    break;
-                    
-                case 'anthropic':
-                    response = await this.callAnthropic(prompt);
-                    break;
-                    
-                case 'ollama':
-                    response = await this.callOllama(prompt);
-                    break;
-                    
-                default:
-                    response = this.getMockResponse(elementData, instruction);
+            if (provider === 'mock') {
+                response = this.getMockResponse(elementData, instruction);
+            } else {
+                response = await this.providers.callProvider(provider, prompt);
             }
 
-            // Log the answer
             const duration = Date.now() - startTime;
             if ('type' in response && response.type === 'error') {
                 await this.logger?.logAnswer({
@@ -95,7 +76,6 @@ export class AIService {
             return response;
         } catch (error) {
             const duration = Date.now() - startTime;
-            // Log the error
             await this.logger?.logAnswer({
                 id: queryId || '',
                 success: false,
@@ -119,14 +99,12 @@ export class AIService {
      * Build prompt for AI with comprehensive instructions
      */
     private buildPrompt(elementData: ElementData, instruction: string): string {
-        // Build parent styles context
         let parentStylesContext = '';
         if (elementData.parentStyles && Object.keys(elementData.parentStyles).length > 0) {
             parentStylesContext = '\n### Parent Container Styles (for layout context)\n' + 
                 JSON.stringify(elementData.parentStyles, null, 2);
         }
 
-        // Build dimensions context
         let dimensionsContext = '';
         if (elementData.dimensions) {
             dimensionsContext = '\n### Element Dimensions & Position\n' +
@@ -249,7 +227,6 @@ export class AIService {
         let html = '';
         const inst = instruction.toLowerCase().trim();
 
-        // CSS patterns with word boundaries - more precise
         const cssPatterns: { pattern: RegExp; css: string }[] = [
             { pattern: /\b(center|centrer|centrer horizontal|centrer vertical)\b/i, 
               css: 'display: flex; justify-content: center; align-items: center;' },
@@ -305,14 +282,12 @@ export class AIService {
               css: 'display: flex; gap: 8px;' }
         ];
 
-        // Check for background image - CSS only
         const hasBackgroundImage = /\b(background\s*image|image\s*de\s*fond)\b/i.test(inst) || 
                                    (/\b(background|fond)\b/i.test(inst) && /\b(image)\b/i.test(inst));
 
         if (hasBackgroundImage) {
             css = "background-image: url('https://via.placeholder.com/400x200'); background-size: cover; background-position: center;";
         } else {
-            // Find matching CSS pattern
             for (const { pattern, css: cssValue } of cssPatterns) {
                 if (pattern instanceof RegExp && pattern.test(inst)) {
                     css = cssValue;
@@ -321,7 +296,6 @@ export class AIService {
             }
         }
 
-        // HTML patterns - only trigger for explicit content requests (separate check)
         const isButtonRequest = /\b(button|bouton)\b/i.test(inst);
         const isInputRequest = /\b(input|champ)\b/i.test(inst) && !/\b(email|password|phone)\b/i.test(inst);
         const isLinkRequest = /\b(link|lien)\b/i.test(inst);
@@ -343,7 +317,6 @@ export class AIService {
             html = '⭐';
         }
 
-        // Default: if instruction explicitly mentions changing text content
         if (!html && !css) {
             const textChangeMatch = inst.match(/(?:change|remplacer|texte)\s+(?:to|in|to be)?\s*[:\-]?\s*(.+)/i);
             if (textChangeMatch && !/\bcss\b/i.test(inst)) {
@@ -356,266 +329,6 @@ export class AIService {
             changes: {
                 css: css,
                 html: html
-            }
-        };
-    }
-
-    /**
-     * Call Groq API
-     */
-    private async callGroq(prompt: string): Promise<AIResponse | { type: 'error'; message: string; retryable: boolean }> {
-        try {
-            const apiKey = await this.configService.getApiKey('groq');
-            if (!apiKey) {
-                return {
-                    type: 'error',
-                    message: 'Groq API key not configured. Run "AI Visual Editor: Set Groq API Key"',
-                    retryable: false
-                };
-            }
-
-            const model = this.configService.getGroqModel();
-            
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [
-                        { role: 'system', content: 'You are a CSS expert. Respond ONLY with valid JSON.' },
-                        { role: 'user', content: prompt }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: 500
-                })
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    const action = await vscode.window.showErrorMessage(
-                        'Groq API key expired or invalid',
-                        'Reconfigure'
-                    );
-                    if (action === 'Reconfigure') {
-                        vscode.commands.executeCommand('aiVisualEditor.setGroqApiKey');
-                    }
-                    return {
-                        type: 'error',
-                        message: 'API key expired or invalid',
-                        retryable: false
-                    };
-                }
-                throw new Error(`Groq API error: ${response.status}`);
-            }
-
-            const data = await response.json() as any;
-            const content = data.choices[0]?.message?.content || '';
-            
-            return this.parseAIResponse(content);
-        } catch (error) {
-            return {
-                type: 'error',
-                message: error instanceof Error ? error.message : 'Failed to call Groq',
-                retryable: true
-            };
-        }
-    }
-
-    /**
-     * Call OpenAI API
-     */
-    private async callOpenAI(prompt: string): Promise<AIResponse | { type: 'error'; message: string; retryable: boolean }> {
-        try {
-            const apiKey = await this.configService.getApiKey('openai');
-            if (!apiKey) {
-                return {
-                    type: 'error',
-                    message: 'OpenAI API key not configured. Run "AI Visual Editor: Set OpenAI API Key"',
-                    retryable: false
-                };
-            }
-
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'gpt-4o',
-                    messages: [
-                        { role: 'system', content: 'You are a CSS expert. Respond ONLY with valid JSON.' },
-                        { role: 'user', content: prompt }
-                    ],
-                    temperature: 0.3,
-                    max_tokens: 500
-                })
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    const action = await vscode.window.showErrorMessage(
-                        'OpenAI API key expired or invalid',
-                        'Reconfigure'
-                    );
-                    if (action === 'Reconfigure') {
-                        vscode.commands.executeCommand('aiVisualEditor.setOpenAiApiKey');
-                    }
-                    return {
-                        type: 'error',
-                        message: 'API key expired or invalid',
-                        retryable: false
-                    };
-                }
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json() as any;
-            const content = data.choices[0]?.message?.content || '';
-            
-            return this.parseAIResponse(content);
-        } catch (error) {
-            return {
-                type: 'error',
-                message: error instanceof Error ? error.message : 'Failed to call OpenAI',
-                retryable: true
-            };
-        }
-    }
-
-    /**
-     * Call Anthropic API
-     */
-    private async callAnthropic(prompt: string): Promise<AIResponse | { type: 'error'; message: string; retryable: boolean }> {
-        try {
-            const apiKey = await this.configService.getApiKey('anthropic');
-            if (!apiKey) {
-                return {
-                    type: 'error',
-                    message: 'Anthropic API key not configured. Run "AI Visual Editor: Set Anthropic API Key"',
-                    retryable: false
-                };
-            }
-
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: {
-                    'x-api-key': apiKey,
-                    'anthropic-version': '2023-06-01',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'claude-3-5-sonnet-20241022',
-                    max_tokens: 500,
-                    system: 'You are a CSS expert. Respond ONLY with valid JSON.',
-                    messages: [{ role: 'user', content: prompt }]
-                })
-            });
-
-            if (!response.ok) {
-                if (response.status === 401) {
-                    const action = await vscode.window.showErrorMessage(
-                        'Anthropic API key expired or invalid',
-                        'Reconfigure'
-                    );
-                    if (action === 'Reconfigure') {
-                        vscode.commands.executeCommand('aiVisualEditor.setAnthropicApiKey');
-                    }
-                    return {
-                        type: 'error',
-                        message: 'API key expired or invalid',
-                        retryable: false
-                    };
-                }
-                throw new Error(`Anthropic API error: ${response.status}`);
-            }
-
-            const data = await response.json() as any;
-            const content = data.content[0]?.text || '';
-            
-            return this.parseAIResponse(content);
-        } catch (error) {
-            return {
-                type: 'error',
-                message: error instanceof Error ? error.message : 'Failed to call Anthropic',
-                retryable: true
-            };
-        }
-    }
-
-    /**
-     * Call Ollama (local)
-     */
-    private async callOllama(prompt: string): Promise<AIResponse | { type: 'error'; message: string; retryable: boolean }> {
-        try {
-            const baseUrl = this.configService.getOllamaUrl();
-            const model = this.configService.getOllamaModel();
-
-            const response = await fetch(`${baseUrl}/api/generate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: model,
-                    prompt: prompt,
-                    stream: false
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Ollama error: ${response.status}. Make sure Ollama is running at ${baseUrl}`);
-            }
-
-            const data = await response.json() as any;
-            const content = data.response || '';
-            
-            return this.parseAIResponse(content);
-        } catch (error) {
-            return {
-                type: 'error',
-                message: error instanceof Error ? error.message : 'Failed to call Ollama. Make sure Ollama is running.',
-                retryable: true
-            };
-        }
-    }
-
-    /**
-     * Parse AI response to extract JSON
-     */
-    private parseAIResponse(content: string): AIResponse {
-        console.log('[AI Service] Raw AI response:', content);
-        
-        // Try to extract JSON from the response
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        
-        if (jsonMatch) {
-            try {
-                const parsed = JSON.parse(jsonMatch[0]);
-                console.log('[AI Service] Parsed JSON:', JSON.stringify(parsed));
-                return {
-                    selector: parsed.selector || '',
-                    changes: {
-                        css: parsed.changes?.css || '',
-                        html: parsed.changes?.html || ''
-                    }
-                };
-            } catch (e) {
-                console.error('[AI Service] JSON parse error:', e);
-                // Fall through to default
-            }
-        }
-
-        // Return a default response if parsing fails
-        console.warn('[AI Service] Could not parse AI response, returning default');
-        return {
-            selector: '',
-            changes: {
-                css: '/* Could not parse AI response */',
-                html: ''
             }
         };
     }
